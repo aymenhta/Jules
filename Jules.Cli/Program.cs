@@ -23,7 +23,7 @@ public sealed class JulesCreateCommand : IJulesCommand
     public void Execute()
     {
         var now = DateTime.UtcNow;
-        var formattedDateTime  = now.ToString("yyyyMMddHHmms");
+        var formattedDateTime  = now.ToString("yyyyMMddHHmmss");
         var upFilename = $"{formattedDateTime}__{MigrationName}__up.sql";
         var downFilename = $"{formattedDateTime}__{MigrationName}__down.sql";
         
@@ -46,15 +46,16 @@ public sealed class JulesCreateCommand : IJulesCommand
         using var upfs = File.Create(upFullPath);
         using var downfs = File.Create(downFullPath);
 
-        var upinfo = (new UTF8Encoding(true)).GetBytes($"-- mode: \"UP\" ({now.ToString("yyyy/MM/dd HH:mm:s")})");
-        var downinfo = (new UTF8Encoding(true)).GetBytes($"-- mode: \"DOWN\" ({now.ToString("yyyy/MM/dd HH:mm:s")})");
+        var commentDate = now.ToString("yyyy/MM/dd HH:mm:ss");
+
+        var upinfo = (new UTF8Encoding(true)).GetBytes($"-- mode: \"UP\" ({commentDate})");
+        var downinfo = (new UTF8Encoding(true)).GetBytes($"-- mode: \"DOWN\" ({commentDate})");
 
         upfs.Write(upinfo, 0, upinfo.Length);
         downfs.Write(downinfo, 0, downinfo.Length);
-
         
-        Console.WriteLine("migration " + upFilename + " has been create successfully");
-        Console.WriteLine("migration " + downFilename + " has been create successfully");
+        JulesLogger.Info("migration " + upFilename + " has been create successfully");
+        JulesLogger.Info("migration " + downFilename + " has been create successfully");
     }
 }
 
@@ -100,7 +101,14 @@ internal sealed class Program
                 _ => throw new InvalidOperationException("ERROR: Invalid command")
             };
 
-            command.Execute();
+            try
+            {
+                command.Execute();
+            }
+            catch (Exception e)
+            {
+                JulesLogger.Error(e);
+            }
             return;
         }
     }

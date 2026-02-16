@@ -1,26 +1,6 @@
-﻿namespace Jules.Cli;
+﻿using System.Text;
 
-public static class FileContentHelpers
-{
-    public static string FileContents()
-    {
-        var sb = new System.Text.StringBuilder();
-
-        sb.Append("-- +jules Up\n");
-        sb.Append("-- +jules StatementBegin\n");
-        sb.Append("SELECT 'up SQL query';\n");
-        sb.Append("-- +jules StatementEnd\n");
-        
-        sb.Append("\n\n");
-
-        sb.Append("-- +jules Down\n");
-        sb.Append("-- +jules StatementBegin\n");
-        sb.Append("SELECT 'down SQL query';\n");
-        sb.Append("-- +jules StatementEnd\n");
-
-        return sb.ToString();
-    }
-}
+namespace Jules.Cli;
 
 public interface IJulesCommand
 {
@@ -42,24 +22,39 @@ public sealed class JulesCreateCommand : IJulesCommand
 
     public void Execute()
     {
-        var now = DateTime.UtcNow.ToString("yyyyMMddHHmms");
-        var filename = $"{now}_{MigrationName}.sql";
+        var now = DateTime.UtcNow;
+        var formattedDateTime  = now.ToString("yyyyMMddHHmms");
+        var upFilename = $"{formattedDateTime}__{MigrationName}__up.sql";
+        var downFilename = $"{formattedDateTime}__{MigrationName}__down.sql";
         
         if (!Directory.Exists(MigrationsDirecory))
         {
             Directory.CreateDirectory(MigrationsDirecory);
         }
 
-        var fullPath = MigrationsDirecory
+        var upFullPath = MigrationsDirecory
             + (MigrationsDirecory.EndsWith("/") || MigrationsDirecory.EndsWith("\\")
                     ? string.Empty
                     : MigrationsDirecory.Last())
-            + filename;
+            + upFilename;
+        var downFullPath = MigrationsDirecory
+            + (MigrationsDirecory.EndsWith("/") || MigrationsDirecory.EndsWith("\\")
+                    ? string.Empty
+                    : MigrationsDirecory.Last())
+            + downFilename;
+
+        using var upfs = File.Create(upFullPath);
+        using var downfs = File.Create(downFullPath);
+
+        var upinfo = (new UTF8Encoding(true)).GetBytes($"-- mode: \"UP\" ({now.ToString("yyyy/MM/dd HH:mm:s")})");
+        var downinfo = (new UTF8Encoding(true)).GetBytes($"-- mode: \"DOWN\" ({now.ToString("yyyy/MM/dd HH:mm:s")})");
+
+        upfs.Write(upinfo, 0, upinfo.Length);
+        downfs.Write(downinfo, 0, downinfo.Length);
 
         
-        File.WriteAllText(fullPath, FileContentHelpers.FileContents());
-        
-        Console.WriteLine("migration " + filename + " has been create successfully");
+        Console.WriteLine("migration " + upFilename + " has been create successfully");
+        Console.WriteLine("migration " + downFilename + " has been create successfully");
     }
 }
 

@@ -1,10 +1,34 @@
 ﻿using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Jules.Cli;
+
 
 public interface IJulesCommand
 {
     void Execute();
+}
+
+public sealed record JsonConfig(SupportedDrivers driver = SupportedDrivers.Sqlite, string dburi = "app.db");
+
+/// create the configuration file in the current working directory
+public sealed class JulesMakeConfigCommands : IJulesCommand
+{
+    public void Execute()
+    {
+        var jsonOpts = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            WriteIndented = true,
+            Converters = { new JsonStringEnumConverter() },
+        };
+        var content = JsonSerializer.SerializeToUtf8Bytes<JsonConfig>(new JsonConfig(), jsonOpts);
+        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "jules.json");
+        using var fs = File.Create(filePath);
+        fs.Write(content);
+        JulesLogger.Info("config file `jules.json` has been created successfully");
+    }
 }
 
 public sealed class JulesCreateCommand : IJulesCommand
@@ -23,10 +47,10 @@ public sealed class JulesCreateCommand : IJulesCommand
     public void Execute()
     {
         var now = DateTime.UtcNow;
-        var formattedDateTime  = now.ToString("yyyyMMddHHmmss");
+        var formattedDateTime = now.ToString("yyyyMMddHHmmss");
         var upFilename = $"{formattedDateTime}__{MigrationName}__up.sql";
         var downFilename = $"{formattedDateTime}__{MigrationName}__down.sql";
-        
+
         if (!Directory.Exists(MigrationsDirecory))
         {
             Directory.CreateDirectory(MigrationsDirecory);
@@ -53,12 +77,11 @@ public sealed class JulesCreateCommand : IJulesCommand
 
         upfs.Write(upinfo, 0, upinfo.Length);
         downfs.Write(downinfo, 0, downinfo.Length);
-        
+
         JulesLogger.Info("migration " + upFilename + " has been create successfully");
         JulesLogger.Info("migration " + downFilename + " has been create successfully");
     }
 }
-
 
 public enum SupportedDrivers
 {
@@ -87,6 +110,20 @@ internal sealed class Program
                 PrintUsage();
                 return;
             }
+            else if (args[0] == "makeconfig")
+            {
+                var command = new JulesMakeConfigCommands();
+                try
+                {
+                    command.Execute();
+                }
+                catch (Exception e)
+                {
+                    JulesLogger.Error(e);
+                }
+                return;
+            }
+
             Console.ForegroundColor = ConsoleColor.DarkRed;
             Console.WriteLine("ERROR: didn't provide enough number arguments");
             Console.ResetColor();
@@ -119,6 +156,7 @@ internal sealed class Program
         Console.WriteLine();
         Console.WriteLine("Actions:");
         Console.WriteLine("\t- init: initialize/prepare the database for migrations");
+        Console.WriteLine("\t- makeconfig: scaffold the configuration file in the current working directory");
         Console.WriteLine("\t- create: create a new migration file, in the specified migration directory");
         Console.WriteLine("\t- up: apply migrations");
         Console.WriteLine("\t- down: undo migrations");

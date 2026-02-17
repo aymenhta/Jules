@@ -31,4 +31,19 @@ public static class JulesLogger
         Console.WriteLine($" {msg} ({DateTime.UtcNow.ToString("HH:mm:ss")})");
         Console.ResetColor();
     }
+
+
+    public static void Error(string msg)
+    {
+        ArgumentNullException.ThrowIfNullOrEmpty(msg);
+
+        Console.ForegroundColor = ConsoleColor.Black;
+        Console.BackgroundColor = ConsoleColor.DarkRed;
+        Console.Write("ERROR");
+        Console.ResetColor();
+
+        Console.ForegroundColor = ConsoleColor.DarkRed;
+        Console.WriteLine($" {msg} ({DateTime.UtcNow.ToString("HH:mm:ss")})");
+        Console.ResetColor();
+    }
 }

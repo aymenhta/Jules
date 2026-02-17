@@ -103,51 +103,53 @@ internal sealed class Program
             return;
         }
 
+        if (args[0] == "--help" || args[0] == "-h")
+        {
+            PrintUsage();
+            return;
+        }
+
+
+        try
+        {
+            var command = GetCommand(args);
+            command!.Execute();
+        }
+        catch (Exception e)
+        {
+            JulesLogger.Error(e);
+        }
+    }
+
+    private static IJulesCommand GetCommand(string[] args)
+    {
+        IJulesCommand? command = null;
+        // single argument commands
         if (args.Length < 2)
         {
-            if (args[0] == "--help" || args[0] == "-h")
+            if (args[0] == "makeconfig")
             {
-                PrintUsage();
-                return;
+                command = new JulesMakeConfigCommands();
             }
-            else if (args[0] == "makeconfig")
+            else
             {
-                var command = new JulesMakeConfigCommands();
-                try
-                {
-                    command.Execute();
-                }
-                catch (Exception e)
-                {
-                    JulesLogger.Error(e);
-                }
-                return;
+                throw new InvalidOperationException("unknown command");
             }
-
-            Console.ForegroundColor = ConsoleColor.DarkRed;
-            Console.WriteLine("ERROR: didn't provide enough number arguments");
-            Console.ResetColor();
-            return;
         }
-
-        if (args.Length == 2)
+        // double argument commands
+        else
         {
-            IJulesCommand command = args[0] switch
+            if (args[0] == "create")
             {
-                "create" => new JulesCreateCommand(Actions.Create, args[1]),
-                _ => throw new InvalidOperationException("ERROR: Invalid command")
-            };
-
-            try
-            {
-                command.Execute();
+                command = new JulesCreateCommand(action: Actions.Create, name: args[1]);
             }
-            catch (Exception e)
+            else
             {
-                JulesLogger.Error(e);
+                throw new InvalidOperationException("unknown command");
             }
-            return;
         }
+
+        return command;
     }
 
     private static void PrintUsage()

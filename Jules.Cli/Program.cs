@@ -2,7 +2,63 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+using Dapper;
+using System.Data;
+using Microsoft.Data.SqlClient;
+using Microsoft.Data.Sqlite;
+using Npgsql;
+
 namespace Jules.Cli;
+
+public static class Constants
+{
+    public static readonly string MigrationsTableName = "db_migrations";
+}
+
+public static class DbConnectionFactory
+{
+    public static IDbConnection Create(SupportedDrivers dialect, string dataSource)
+    {
+
+        return dialect switch
+        {
+            SupportedDrivers.Sqlite => new SqliteConnection(dataSource),
+            SupportedDrivers.Mssql => new SqlConnection(dataSource),
+            SupportedDrivers.Psql => new NpgsqlConnection(dataSource),
+            _ => throw new InvalidOperationException("unkown SQL Dialect")
+        };
+    }
+}
+
+
+public sealed record MigrationsTable(DateTime LastAppliedMigrationId, bool IsSuccessfull);
+
+public sealed record JsonConfig(
+    SupportedDrivers Dialect = SupportedDrivers.Sqlite,
+    string DataSource = "Data Source=app.db",
+    string Dir = "./Migrations"
+)
+{
+    public static JsonConfig? LoadFromDisk()
+    {
+        try
+        {
+            var jsonOpts = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                WriteIndented = true,
+                Converters = { new JsonStringEnumConverter() },
+            };
+            var contents = File.ReadAllBytes("./jules.json");
+            return JsonSerializer.Deserialize<JsonConfig>(contents, jsonOpts);
+        }
+        catch (FileNotFoundException)
+        {
+            return new();
+        }
+
+    }
+};
 
 
 public interface IJulesCommand
@@ -10,10 +66,108 @@ public interface IJulesCommand
     void Execute();
 }
 
-public sealed record JsonConfig(SupportedDrivers driver = SupportedDrivers.Sqlite, string dburi = "app.db");
+
+public sealed class JulesInitCommand : IJulesCommand
+{
+    public required SupportedDrivers Dialect { get; init; }
+    public required string DataSource { get; init; }
+    public required string Table { get; init; }
+
+    // Factory Method
+    public static JulesInitCommand Of(JsonConfig config)
+    {
+        var command = new JulesInitCommand
+        {
+            Dialect = config.Dialect,
+            DataSource = config.DataSource,
+            Table = Constants.MigrationsTableName,
+        };
+
+        if (command.Dialect != SupportedDrivers.Sqlite
+            && command.Dialect != SupportedDrivers.Psql
+            && command.Dialect != SupportedDrivers.Mssql)
+        {
+            throw new InvalidOperationException($"{command.Dialect.ToString()} is an unknown SQL dialect.");
+        }
+
+        if (string.IsNullOrWhiteSpace(config.DataSource))
+        {
+            throw new ArgumentNullException("Couldn't find the datasource.");
+        }
+
+        if (string.IsNullOrWhiteSpace(command.Table))
+        {
+            throw new ArgumentNullException("Couldn't find the migrations table.");
+        }
+
+        return command;
+    }
+
+    // TODO: Migrations Table name here needs proper validation
+    private string GetDDL()
+    {
+        switch (Dialect)
+        {
+            case SupportedDrivers.Sqlite:
+                return $"""
+                CREATE TABLE IF NOT EXISTS {Constants.MigrationsTableName}(
+                    Id INTEGER PRIMARY KEY CHECK (Id = 1),
+                    LastAppliedMigrationId TEXT NOT NULL,
+                    IsSuccessfull INTEGER CHECK (IsSuccessfull IN (0, 1))
+                );
+                """;
+            case SupportedDrivers.Psql:
+                return $"""
+                CREATE TABLE IF NOT EXISTS {Constants.MigrationsTableName}(
+                    Id INTEGER PRIMARY KEY CHECK (Id = 1),
+                    LastAppliedMigrationId TEXT NOT NULL,
+                    IsSuccessfull BOOLEAN NOT NULL
+                );
+                """;
+            case SupportedDrivers.Mssql:
+                return $"""
+                    IF NOT EXISTS (
+                        SELECT 1
+                        FROM sys.tables
+                        WHERE name = '{Constants.MigrationsTableName}'
+                    )
+                    BEGIN
+                        CREATE TABLE dbo.{Constants.MigrationsTableName} (
+                            Id INT NOT NULL PRIMARY KEY
+                                CONSTRAINT CK_MigrationsTable_Id CHECK (Id = 1),
+
+                            LastAppliedMigrationId NVARCHAR(MAX) NOT NULL,
+
+                            IsSuccessfull BIT NOT NULL
+                        );
+                    END
+                    """;
+            default:
+                throw new InvalidOperationException($"{Dialect.ToString()} is an unkown SQL dialect.");
+        }
+    }
+
+    public void Execute()
+    {
+        using var conn = DbConnectionFactory.Create(Dialect, DataSource);
+        conn.Open();
+        int numberOfRows = conn.Execute(GetDDL());
+        if (
+            (Dialect == SupportedDrivers.Sqlite && numberOfRows == -1)
+            || (Dialect == SupportedDrivers.Psql && numberOfRows != -1) // NPGSQL return -1 for DDL stmts
+            || (Dialect == SupportedDrivers.Mssql && numberOfRows != 0) // Microsoft.Data.SqlClient return 0 for DDL stmts
+        )
+        {
+            throw new InvalidOperationException("Failed to create the migrations table");
+        }
+
+        JulesLogger.Info("Migrations table has been created successfully");
+    }
+}
+
 
 /// create the configuration file in the current working directory
-public sealed class JulesMakeConfigCommands : IJulesCommand
+public sealed class JulesMakeConfigCommand : IJulesCommand
 {
     public void Execute()
     {
@@ -118,6 +272,7 @@ internal sealed class Program
         catch (Exception e)
         {
             JulesLogger.Error(e);
+            throw; // TODO: For development only, remove when releasing; 
         }
     }
 
@@ -129,7 +284,13 @@ internal sealed class Program
         {
             if (args[0] == "makeconfig")
             {
-                command = new JulesMakeConfigCommands();
+                command = new JulesMakeConfigCommand();
+            }
+            else if (args[0] == "init")
+            {
+                JsonConfig? config = JsonConfig.LoadFromDisk();
+                if (config is null) throw new InvalidOperationException("Couldn't find configuration file.");
+                command = JulesInitCommand.Of(config);
             }
             else
             {

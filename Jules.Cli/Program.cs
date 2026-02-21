@@ -149,19 +149,17 @@ public sealed class JulesInitCommand : IJulesCommand
 
     public void Execute()
     {
-        using var conn = DbConnectionFactory.Create(Dialect, DataSource);
-        conn.Open();
-        int numberOfRows = conn.Execute(GetDDL());
-        if (
-            (Dialect == SupportedDrivers.Sqlite && numberOfRows == -1)
-            || (Dialect == SupportedDrivers.Psql && numberOfRows != -1) // NPGSQL return -1 for DDL stmts
-            || (Dialect == SupportedDrivers.Mssql && numberOfRows != 0) // Microsoft.Data.SqlClient return 0 for DDL stmts
-        )
+        try
         {
-            throw new InvalidOperationException("Failed to create the migrations table");
+            using var conn = DbConnectionFactory.Create(Dialect, DataSource);
+            conn.Open();
+            conn.Execute(GetDDL());
+            JulesLogger.Info("Migrations table has been created successfully");
         }
-
-        JulesLogger.Info("Migrations table has been created successfully");
+        catch (System.Data.Common.DbException ex)
+        {
+            throw new InvalidOperationException("Failed to create the migrations table", ex);
+        }
     }
 }
 

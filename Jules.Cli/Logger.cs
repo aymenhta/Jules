@@ -20,7 +20,7 @@ public static class JulesLogger
     public static void Error(Exception e)
     {
         ArgumentNullException.ThrowIfNull(e);
-        var msg = e.InnerException?.Message ?? e.Message;
+        var msg = $"{e.Message}\n|->{e.InnerException?.Message ?? string.Empty}";
 
         Console.ForegroundColor = ConsoleColor.Black;
         Console.BackgroundColor = ConsoleColor.DarkRed;

@@ -47,6 +47,10 @@ internal sealed class Program
             {
                 command = new JulesInitCommand();
             }
+            else if (args[0] == "up")
+            {
+                command = new JulesUpCommand();
+            }
             else
             {
                 throw new InvalidOperationException("unknown command");

@@ -12,35 +12,11 @@ public sealed class JulesInitCommand : IJulesCommand
 
     public JulesInitCommand()
     {
-        var config = GetAndValidateConfigFile();
+        var config = JsonConfig.LoadAndValidateConfigFile();
 
         Dialect = config.Dialect;
         DataSource = config.DataSource;
         Table = Constants.MigrationsTableName;
-    }
-
-    private JsonConfig GetAndValidateConfigFile()
-    {
-        JsonConfig? config = JsonConfig.LoadFromDisk();
-        if (config is null)
-        {
-            throw new InvalidOperationException("Couldn't find configuration file.");
-        }
-
-
-        if (config.Dialect != SupportedDrivers.Sqlite
-            && config.Dialect != SupportedDrivers.Psql
-            && config.Dialect != SupportedDrivers.Mssql)
-        {
-            throw new InvalidOperationException($"{config.Dialect.ToString()} is an unknown SQL dialect.");
-        }
-
-        if (string.IsNullOrWhiteSpace(config.DataSource))
-        {
-            throw new ArgumentNullException("Couldn't find the datasource.");
-        }
-
-        return config;
     }
 
     // TODO: Migrations Table name here needs proper validation
@@ -51,15 +27,15 @@ public sealed class JulesInitCommand : IJulesCommand
             case SupportedDrivers.Sqlite:
                 return $"""
                 CREATE TABLE IF NOT EXISTS {Table}(
-                    Id INTEGER PRIMARY KEY CHECK (Id = 1),
+                    Id INTEGER PRIMARY KEY,
                     LastAppliedMigrationId TEXT NOT NULL,
-                    IsSuccessfull INTEGER CHECK (IsSuccessfull IN (0, 1))
+                    IsSuccessfull INTEGER NOT NULL
                 );
                 """;
             case SupportedDrivers.Psql:
                 return $"""
                 CREATE TABLE IF NOT EXISTS {Table}(
-                    Id INTEGER PRIMARY KEY CHECK (Id = 1),
+                    Id SERIAL PRIMARY KEY,
                     LastAppliedMigrationId TEXT NOT NULL,
                     IsSuccessfull BOOLEAN NOT NULL
                 );
@@ -73,11 +49,8 @@ public sealed class JulesInitCommand : IJulesCommand
                     )
                     BEGIN
                         CREATE TABLE dbo.{Table} (
-                            Id INT NOT NULL PRIMARY KEY
-                                CONSTRAINT CK_MigrationsTable_Id CHECK (Id = 1),
-
+                            Id INT IDENTITY(1,1) PRIMARY KEY,
                             LastAppliedMigrationId NVARCHAR(MAX) NOT NULL,
-
                             IsSuccessfull BIT NOT NULL
                         );
                     END

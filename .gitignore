@@ -485,5 +485,6 @@ $RECYCLE.BIN/
 
 # dp
 #
+/Migrations/
 jules.json
 *.db

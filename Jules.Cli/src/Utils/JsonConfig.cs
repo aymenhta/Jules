@@ -29,4 +29,28 @@ public sealed record JsonConfig(
         }
 
     }
+
+    public static JsonConfig LoadAndValidateConfigFile()
+    {
+        JsonConfig? config = JsonConfig.LoadFromDisk();
+        if (config is null)
+        {
+            throw new InvalidOperationException("Couldn't find configuration file.");
+        }
+
+
+        if (config.Dialect != SupportedDrivers.Sqlite
+            && config.Dialect != SupportedDrivers.Psql
+            && config.Dialect != SupportedDrivers.Mssql)
+        {
+            throw new InvalidOperationException($"{config.Dialect.ToString()} is an unknown SQL dialect.");
+        }
+
+        if (string.IsNullOrWhiteSpace(config.DataSource))
+        {
+            throw new ArgumentNullException("Couldn't find the datasource.");
+        }
+
+        return config;
+    }
 };

@@ -1,6 +1,6 @@
 namespace Jules.Cli.Utils;
 
-public sealed record MigrationsTable(DateTime LastAppliedMigrationId, bool IsSuccessfull);
+// public sealed record MigrationsTable(string LastAppliedMigrationId, bool IsSuccessfull);
 
 public enum SupportedDrivers
 {

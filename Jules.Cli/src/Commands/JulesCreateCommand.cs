@@ -1,5 +1,6 @@
 using System.Text;
 using Jules.Cli.Utils;
+using Jules.Cli.Database;
 
 namespace Jules.Cli.Commands;
 

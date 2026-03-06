@@ -3,7 +3,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Data.Sqlite;
 using Npgsql;
 
-namespace Jules.Cli.Utils;
+namespace Jules.Cli.Database;
 
 
 public static class DbConnectionFactory

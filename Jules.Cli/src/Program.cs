@@ -1,4 +1,5 @@
 ﻿using Jules.Cli.Utils;
+using Jules.Cli.Database;
 using Jules.Cli.Commands;
 
 namespace Jules.Cli;
@@ -29,7 +30,10 @@ internal sealed class Program
         catch (Exception e)
         {
             JulesLogger.Error(e);
-            throw; // TODO: For development only, remove when releasing; 
+            if (args.Contains("--showStackTrace"))
+            {
+                throw;
+            }
         }
     }
 
@@ -91,7 +95,7 @@ internal sealed class Program
         Console.WriteLine("\t- sqlite, mssql, psql");
         Console.WriteLine();
         Console.WriteLine("Options:");
-        Console.WriteLine("\t- dir: migrations dir (default is './Migrations/')");
+        Console.WriteLine("\t- --showStackTrace: show exceptions stack traces");
     }
 }
 

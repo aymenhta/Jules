@@ -51,6 +51,10 @@ internal sealed class Program
             {
                 command = new JulesUpCommand();
             }
+            else if (args[0] == "undo")
+            {
+                command = new JulesUndoCommand();
+            }
             else
             {
                 throw new InvalidOperationException("unknown command");
@@ -81,7 +85,7 @@ internal sealed class Program
         Console.WriteLine("\t- makeconfig: scaffold the configuration file in the current working directory");
         Console.WriteLine("\t- create: create a new migration file, in the specified migration directory");
         Console.WriteLine("\t- up: apply migrations");
-        Console.WriteLine("\t- down: undo migrations");
+        Console.WriteLine("\t- undo: undo migrations");
         Console.WriteLine();
         Console.WriteLine("Drivers:");
         Console.WriteLine("\t- sqlite, mssql, psql");

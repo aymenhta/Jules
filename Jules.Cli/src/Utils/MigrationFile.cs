@@ -49,4 +49,28 @@ public sealed class MigrationFile
             .Where(f => f.Contains(migrationsMode))
             .Select(f => new MigrationFile(f));
     }
+
+    public static MigrationFile LoadOneFromDisk(string migrationDir, string migrationID, string migrationMode)
+    {
+        if (!Directory.Exists(migrationDir))
+        {
+            throw new InvalidOperationException($"The specified migrations directory `{migrationDir}` doesn't exist.");
+        }
+
+        if (migrationMode != "up" && migrationMode != "down")
+        {
+            throw new InvalidOperationException($"Uknown migration mode `{migrationMode}`.");
+        }
+
+        var filepath = Directory
+            .EnumerateFiles(migrationDir)
+            .Where(f => f.Contains(migrationID) && f.Contains(migrationMode))
+            .FirstOrDefault();
+        if (filepath is null)
+        {
+            throw new InvalidOperationException($"Migration `{migrationID}` with mode `{migrationMode}` could not be found.");
+        }
+
+        return new MigrationFile(filepath);
+    }
 }

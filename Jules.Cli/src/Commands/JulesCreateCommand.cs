@@ -20,7 +20,7 @@ public sealed class JulesCreateCommand : IJulesCommand
     public void Execute()
     {
         var now = DateTime.UtcNow;
-        var formattedDateTime = now.ToString("yyyyMMddHHmmss");
+        var formattedDateTime = now.ToString(Constants.MigrationsIdFormat);
         var upFilename = $"{formattedDateTime}__{MigrationName}__up.sql";
         var downFilename = $"{formattedDateTime}__{MigrationName}__down.sql";
 

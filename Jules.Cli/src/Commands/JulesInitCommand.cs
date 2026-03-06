@@ -19,7 +19,6 @@ public sealed class JulesInitCommand : IJulesCommand
         Table = Constants.MigrationsTableName;
     }
 
-    // TODO: Migrations Table name here needs proper validation
     private string GetDDL()
     {
         switch (Dialect)

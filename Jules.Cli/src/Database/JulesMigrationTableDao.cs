@@ -43,4 +43,14 @@ public sealed class JulesMigrationTableDao
             throw new InvalidOperationException($"Couldn't persist the state of the migration {migration.Fname} into database.");
         }
     }
+
+    public void Reset()
+    {
+        var query = $"DELETE FROM {Constants.MigrationsTableName}";
+        int nbRows = _conn.Execute(query);
+        if (nbRows != 1)
+        {
+            throw new InvalidOperationException("Failed to reset the migration tracking table to its initial state.");
+        }
+    }
 }

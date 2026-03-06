@@ -5,7 +5,10 @@ using Jules.Cli.Database;
 
 namespace Jules.Cli.Commands;
 
-
+/// <summary>
+/// This commands gets all the un-appllied migration files,
+/// and apply them sequentially one-by-one.
+// </summary>
 public sealed class JulesUpCommand : IJulesCommand
 {
     public SupportedDrivers Dialect { get; }
@@ -43,12 +46,10 @@ public sealed class JulesUpCommand : IJulesCommand
         if (lastAppliedMigration is not null)
         {
             // since there is a migration already applied ignore all the migrations before it and
-            // only apply thprovider = e migrations that comes after it sequentially
+            // only apply the migrations that comes after it sequentially
 
-            var lastAppliedMigrationID = DateTime.ParseExact(
-                lastAppliedMigration.LastAppliedMigrationId,
-                Constants.MigrationsIdFormat,
-                Constants.FormatProvider
+            var lastAppliedMigrationID = DateTime.Parse(
+                lastAppliedMigration.LastAppliedMigrationId
             );
 
             if (lastAppliedMigration.IsSuccessfull)
@@ -72,7 +73,7 @@ public sealed class JulesUpCommand : IJulesCommand
                 lastMigration = migration;
                 lastMigration.Apply(conn);
                 JulesLogger.Info($"migration {lastMigration.Fname} has been applied successfully.");
-                julesMigrationTableDao.CreateOrUpdate(lastMigration, false);
+                julesMigrationTableDao.CreateOrUpdate(lastMigration, true);
                 JulesLogger.Info($"migration {lastMigration.Fname} has been tracked successfully.");
             }
         }

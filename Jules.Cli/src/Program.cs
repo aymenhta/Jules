@@ -1,5 +1,4 @@
 ﻿using Jules.Cli.Utils;
-using Jules.Cli.Database;
 using Jules.Cli.Commands;
 
 namespace Jules.Cli;
@@ -69,7 +68,7 @@ internal sealed class Program
         {
             if (args[0] == "create")
             {
-                command = new JulesCreateCommand(action: Actions.Create, name: args[1]);
+                command = new JulesCreateCommand(name: args[1]);
             }
             else
             {

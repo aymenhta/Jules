@@ -1,19 +1,17 @@
 using System.Text;
 using Jules.Cli.Utils;
-using Jules.Cli.Database;
+// using Jules.Cli.Database;
 
 namespace Jules.Cli.Commands;
 
 
 public sealed class JulesCreateCommand : IJulesCommand
 {
-    public Actions Action { get; private set; }
     public string MigrationName { get; private set; }
     public string MigrationsDirecory { get; private set; }
 
-    public JulesCreateCommand(Actions action, string name, string dir = "./Migrations/")
+    public JulesCreateCommand(string name, string dir = "./Migrations/")
     {
-        Action = action;
         MigrationName = name;
         MigrationsDirecory = dir;
     }

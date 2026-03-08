@@ -20,6 +20,12 @@ internal sealed class Program
             return;
         }
 
+        if (args[0] == "--verions" || args[0] == "-v")
+        {
+            PrintVersion();
+            return;
+        }
+
 
         try
         {
@@ -81,20 +87,25 @@ internal sealed class Program
 
     private static void PrintUsage()
     {
-        Console.WriteLine("jules [ACTION] [DRIVER] [CONNECTION STRING] [OPTIONS]");
+        Console.WriteLine("jules [COMMAND] [OPTIONS]");
         Console.WriteLine();
-        Console.WriteLine("Actions:");
-        Console.WriteLine("\t- init: initialize/prepare the database for migrations");
+        Console.WriteLine("Commands:");
         Console.WriteLine("\t- makeconfig: scaffold the configuration file in the current working directory");
+        Console.WriteLine("\t- init: initialize/prepare the database for migrations");
         Console.WriteLine("\t- create: create a new migration file, in the specified migration directory");
         Console.WriteLine("\t- up: apply migrations");
         Console.WriteLine("\t- undo: undo migrations");
-        Console.WriteLine();
-        Console.WriteLine("Drivers:");
-        Console.WriteLine("\t- sqlite, mssql, psql");
+        // Console.WriteLine();
+        // Console.WriteLine("Drivers:");
+        // Console.WriteLine("\t- sqlite, mssql, psql");
         Console.WriteLine();
         Console.WriteLine("Options:");
         Console.WriteLine("\t- --showStackTrace: show exceptions stack traces");
+    }
+
+    private static void PrintVersion()
+    {
+        Console.WriteLine("Jules V1.0.0");
     }
 }
 

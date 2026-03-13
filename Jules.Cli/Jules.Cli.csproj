@@ -5,7 +5,22 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>jules</ToolCommandName>
+    <PackageId>Jules</PackageId>
+    <Version>1.0.1</Version>
+    <Authors>Aymen Hitta</Authors>
+    <Description>Jules is a command-line tool for managing database schema changes through incremental SQL migrations.</Description>
+    <PackageTags>cli, console, database, sql, migrations</PackageTags>
+
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/aymenhta/jules</RepositoryUrl>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Dapper" Version="2.1.66" />

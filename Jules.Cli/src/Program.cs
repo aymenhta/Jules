@@ -123,7 +123,7 @@ internal sealed class Program
 
     private static void PrintVersion()
     {
-        Console.WriteLine("Jules V1.0.0");
+        Console.WriteLine("Jules V1.0.1");
     }
 }
 

@@ -25,6 +25,20 @@ Jules tracks which migrations have been applied using a table in your database.
 
 ---
 
+# Install
+
+Before installing jules make sure you have dotnet 9+ installed on your machine. To install Jules globally run the command:
+
+```shell
+dotnet tool install --global Jules
+```
+
+In case you only want to install it only with-in the scope of your current project, run the command:
+
+```shell
+dotnet tool install Jules
+```
+
 # Usage
 
 ## 1. Create a Configuration File
